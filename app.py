@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hospital-assignment-secret"
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "localhost"),
     "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", "Parikshit@1356"),
+    "password": os.environ.get("DB_PASSWORD", "your_password"),
     "database": os.environ.get("DB_NAME", "Hospital_MS"),
 }
 
