@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Hospital Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="layout">
+        <!-- ===================== SIDEBAR ===================== -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">🏥</div>
+                <div>
+                    <div class="brand-text">MediCare HMS</div>
+                    <div class="brand-sub">Hospital Admin</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Main</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-link active">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <div class="nav-section-label">Management</div>
+                <a href="#patients" class="nav-link" onclick="scrollToSection('patients')">
+                    <span class="nav-icon">👤</span> Patients
+                </a>
+                <a href="#doctors" class="nav-link" onclick="scrollToSection('doctors')">
+                    <span class="nav-icon">🩺</span> Doctors
+                </a>
+                <a href="#appointments" class="nav-link" onclick="scrollToSection('appointments')">
+                    <span class="nav-icon">📅</span> Appointments
+                </a>
+                <a href="#billing" class="nav-link" onclick="scrollToSection('billing')">
+                    <span class="nav-icon">💳</span> Billing
+                </a>
+                <a href="#rooms" class="nav-link" onclick="scrollToSection('rooms')">
+                    <span class="nav-icon">🛏️</span> Rooms
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar">{{ username[0]|upper if username else 'A' }}</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">{{ username }}</div>
+                        <div class="sidebar-user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===================== MAIN CONTENT ===================== -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <span class="topbar-title">Dashboard</span>
+                    <span class="topbar-breadcrumb">/ Overview</span>
+                </div>
+                <div class="topbar-right">
+                    <span class="topbar-time" id="live-clock"></span>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">⏻ Sign Out</a>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <div class="page-body">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                <div
+                    class="flash {{ 'flash-success' if cat == 'success' else 'flash-error' if cat == 'error' else 'flash-info' }}">
+                    {{ msg }}</div>
+                {% endfor %}{% endif %}
+                {% endwith %}
+
+                <!-- Hero Section -->
+                <div class="hero fade-in">
+                    <div class="hero-content">
+                        <h2>Welcome back, {{ username }} 👋</h2>
+                        <p>Monitor and manage all hospital operations from this central dashboard. Track patients,
+                            doctors, appointments, billing, and room availability in real-time.</p>
+                        <div class="hero-stats">
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value" id="current-date"></div>
+                                <div class="hero-stat-label">Today's Date</div>
+                            </div>
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value">{{ username }}</div>
+                                <div class="hero-stat-label">Logged in as</div>
+                            </div>
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value" style="color: var(--accent-emerald);">● Online</div>
+                                <div class="hero-stat-label">System Status</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card fade-in-delay-1">
+                        <div class="stat-header">
+                            <div class="stat-icon blue">👤</div>
+                        </div>
+                        <div class="stat-value">{{ patients|length }}</div>
+                        <div class="stat-label">Total Patients</div>
+                    </div>
+                    <div class="stat-card fade-in-delay-2">
+                        <div class="stat-header">
+                            <div class="stat-icon green">🩺</div>
+                        </div>
+                        <div class="stat-value">{{ doctors|length }}</div>
+                        <div class="stat-label">Active Doctors</div>
+                    </div>
+                    <div class="stat-card fade-in-delay-3">
+                        <div class="stat-header">
+                            <div class="stat-icon purple">🛏️</div>
+                        </div>
+                        <div class="stat-value">{{ rooms|length }}</div>
+                        <div class="stat-label">Rooms Available</div>
+                    </div>
+                    <div class="stat-card fade-in-delay-4">
+                        <div class="stat-header">
+                            <div class="stat-icon amber">📅</div>
+                        </div>
+                        <div class="stat-value" style="font-size:20px; font-weight:600; color:var(--accent-amber);">{{
+                            username }}</div>
+                        <div class="stat-label">Admin Online</div>
+                    </div>
+                </div>
+
+                <!-- ===================== PATIENTS ===================== -->
+                <div class="section fade-in" id="patients">
+                    <div class="section-header">
+                        <div class="section-title"><span class="icon">👤</span> Patient Records <span
+                                class="section-badge">{{ patients|length }}</span></div>
+                        <button class="toggle-btn" onclick="toggleForm('patient-form')">+ Add Patient</button>
+                    </div>
+                    <div class="section-body">
+                        <!-- Add Patient Form -->
+                        <div id="patient-form" class="form-collapsible">
+                            <form action="/add_patient" method="POST">
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Patient ID</label><input name="patient_id"
+                                            placeholder="e.g. P001" required></div>
+                                    <div class="form-group"><label>Full Name</label><input name="name"
+                                            placeholder="Patient name" required></div>
+                                    <div class="form-group"><label>Age</label><input name="age" type="number"
+                                            placeholder="Age" required></div>
+                                    <div class="form-group"><label>Gender</label>
+                                        <select name="gender" required>
+                                            <option value="">Select gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Phone</label><input name="phone"
+                                            placeholder="Phone number" required></div>
+                                    <div class="form-group"><label>Address</label><input name="address"
+                                            placeholder="Address" required></div>
+                                </div>
+                                <div class="form-actions"><button type="submit" class="btn btn-primary">Add
+                                        Patient</button></div>
+                            </form>
+                            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                        </div>
+                        <!-- Search -->
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="Search patients..."
+                                onkeyup="filterTable(this, 'patient-table')">
+                        </div>
+                        <!-- Table -->
+                        {% if patients %}
+                        <div style="overflow-x:auto;">
+                            <table class="data-table striped" id="patient-table">
+                                <thead>
+                                    <tr>{% for c in patient_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+                                </thead>
+                                <tbody>{% for row in patients %}<tr>{% for c in patient_columns %}<td>{{ row[c] }}</td>
+                                        {% endfor %}</tr>{% endfor %}</tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state"><span class="empty-icon">📋</span>No patient records found. Click "+
+                            Add Patient" to get started.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ===================== DOCTORS ===================== -->
+                <div class="section fade-in" id="doctors">
+                    <div class="section-header">
+                        <div class="section-title"><span class="icon">🩺</span> Doctor Records <span
+                                class="section-badge">{{ doctors|length }}</span></div>
+                        <button class="toggle-btn" onclick="toggleForm('doctor-form')">+ Add Doctor</button>
+                    </div>
+                    <div class="section-body">
+                        <div id="doctor-form" class="form-collapsible">
+                            <form action="/add_doctor" method="POST">
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Doctor ID</label><input name="doctor_id"
+                                            placeholder="e.g. D001" required></div>
+                                    <div class="form-group"><label>Doctor Name</label><input name="doctor_name"
+                                            placeholder="Doctor name" required></div>
+                                    <div class="form-group"><label>Specialization</label><input name="specialization"
+                                            placeholder="e.g. Cardiology" required></div>
+                                    <div class="form-group"><label>Phone</label><input name="doctor_phone"
+                                            placeholder="Phone number" required></div>
+                                    <div class="form-group"><label>Availability</label>
+                                        <select name="availability" required>
+                                            <option value="">Select</option>
+                                            <option value="Available">Available</option>
+                                            <option value="On Leave">On Leave</option>
+                                            <option value="Busy">Busy</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions"><button type="submit" class="btn btn-primary">Add
+                                        Doctor</button></div>
+                            </form>
+                            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                        </div>
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="Search doctors..."
+                                onkeyup="filterTable(this, 'doctor-table')">
+                        </div>
+                        {% if doctors %}
+                        <div style="overflow-x:auto;">
+                            <table class="data-table striped" id="doctor-table">
+                                <thead>
+                                    <tr>{% for c in doctor_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+                                </thead>
+                                <tbody>{% for row in doctors %}<tr>{% for c in doctor_columns %}<td>{{ row[c] }}</td>{%
+                                        endfor %}</tr>{% endfor %}</tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state"><span class="empty-icon">🩺</span>No doctor records found.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ===================== APPOINTMENTS ===================== -->
+                <div class="section fade-in" id="appointments">
+                    <div class="section-header">
+                        <div class="section-title"><span class="icon">📅</span> Appointments <span
+                                class="section-badge">{{ appointments|length }}</span></div>
+                        <button class="toggle-btn" onclick="toggleForm('appointment-form')">+ Book Appointment</button>
+                    </div>
+                    <div class="section-body">
+                        <div id="appointment-form" class="form-collapsible">
+                            <form action="/add_appointment" method="POST">
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Appointment ID</label><input name="appointment_id"
+                                            placeholder="e.g. A001" required></div>
+                                    <div class="form-group"><label>Patient ID</label><input name="patient_id"
+                                            placeholder="e.g. P001" required></div>
+                                    <div class="form-group"><label>Doctor ID</label><input name="doctor_id"
+                                            placeholder="e.g. D001" required></div>
+                                    <div class="form-group"><label>Date</label><input name="appointment_date"
+                                            type="date" required></div>
+                                    <div class="form-group"><label>Status</label>
+                                        <select name="status" required>
+                                            <option value="">Select status</option>
+                                            <option value="Scheduled">Scheduled</option>
+                                            <option value="Completed">Completed</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions"><button type="submit" class="btn btn-primary">Book
+                                        Appointment</button></div>
+                            </form>
+                            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                        </div>
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="Search appointments..."
+                                onkeyup="filterTable(this, 'appointment-table')">
+                        </div>
+                        {% if appointments %}
+                        <div style="overflow-x:auto;">
+                            <table class="data-table striped" id="appointment-table">
+                                <thead>
+                                    <tr>{% for c in appointment_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+                                </thead>
+                                <tbody>{% for row in appointments %}<tr>{% for c in appointment_columns %}<td>
+                                            {% if c.lower() == 'status' %}<span
+                                                class="badge {% if row[c] == 'Scheduled' %}badge-available{% elif row[c] == 'Completed' %}badge-occupied{% else %}badge-cancelled{% endif %}">{{
+                                                row[c] }}</span>
+                                            {% else %}{{ row[c] }}{% endif %}
+                                        </td>{% endfor %}</tr>{% endfor %}</tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state"><span class="empty-icon">📅</span>No appointments found. Click "+ Book
+                            Appointment" to get started.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ===================== BILLING ===================== -->
+                <div class="section fade-in" id="billing">
+                    <div class="section-header">
+                        <div class="section-title"><span class="icon">💳</span> Billing <span class="section-badge">{{
+                                billings|length }}</span></div>
+                        <button class="toggle-btn" onclick="toggleForm('billing-form')">+ Add Record</button>
+                    </div>
+                    <div class="section-body">
+                        <div id="billing-form" class="form-collapsible">
+                            <form action="/add_billing" method="POST">
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Bill ID</label><input name="bill_id"
+                                            placeholder="e.g. B001" required></div>
+                                    <div class="form-group"><label>Patient ID</label><input name="patient_id"
+                                            placeholder="e.g. P001" required></div>
+                                    <div class="form-group"><label>Amount (₹)</label><input name="amount" type="number"
+                                            step="0.01" placeholder="0.00" required></div>
+                                    <div class="form-group"><label>Payment Status</label>
+                                        <select name="payment_status" required>
+                                            <option value="">Select</option>
+                                            <option value="Paid">Paid</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Overdue">Overdue</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Bill Date</label><input name="bill_date" type="date"
+                                            required></div>
+                                </div>
+                                <div class="form-actions"><button type="submit" class="btn btn-primary">Add Billing
+                                        Record</button></div>
+                            </form>
+                            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                        </div>
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="Search billing records..."
+                                onkeyup="filterTable(this, 'billing-table')">
+                        </div>
+                        {% if billings %}
+                        <div style="overflow-x:auto;">
+                            <table class="data-table striped" id="billing-table">
+                                <thead>
+                                    <tr>{% for c in billing_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+                                </thead>
+                                <tbody>{% for row in billings %}<tr>{% for c in billing_columns %}<td>
+                                            {% if c.lower() == 'payment_status' %}<span
+                                                class="badge {% if row[c] == 'Paid' %}badge-available{% elif row[c] == 'Pending' %}badge-occupied{% else %}badge-cancelled{% endif %}">{{
+                                                row[c] }}</span>
+                                            {% else %}{{ row[c] }}{% endif %}
+                                        </td>{% endfor %}</tr>{% endfor %}</tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state"><span class="empty-icon">💳</span>No billing records found. Click "+
+                            Add Record" to get started.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ===================== ROOMS ===================== -->
+                <div class="section fade-in" id="rooms">
+                    <div class="section-header">
+                        <div class="section-title"><span class="icon">🛏️</span> Room Directory <span
+                                class="section-badge">{{ rooms|length }}</span></div>
+                        <button class="toggle-btn" onclick="toggleForm('room-form')">+ Add Room</button>
+                    </div>
+                    <div class="section-body">
+                        <div id="room-form" class="form-collapsible">
+                            <form action="/add_room" method="POST">
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Room Number</label><input name="room_no"
+                                            type="number" placeholder="e.g. 101" required></div>
+                                    <div class="form-group"><label>Room Type</label>
+                                        <select name="room_type" required>
+                                            <option value="">Select type</option>
+                                            <option value="General">General</option>
+                                            <option value="ICU">ICU</option>
+                                            <option value="Private">Private</option>
+                                            <option value="Semi-Private">Semi-Private</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Availability</label>
+                                        <select name="availability" required>
+                                            <option value="">Select</option>
+                                            <option value="Available">Available</option>
+                                            <option value="Occupied">Occupied</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions"><button type="submit" class="btn btn-primary">Add
+                                        Room</button></div>
+                            </form>
+                            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                        </div>
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="Search rooms..." onkeyup="filterTable(this, 'room-table')">
+                        </div>
+                        {% if rooms %}
+                        <div style="overflow-x:auto;">
+                            <table class="data-table striped" id="room-table">
+                                <thead>
+                                    <tr>{% for c in room_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in rooms %}<tr>{% for c in room_columns %}<td>
+                                            {% if c.lower() == 'availability' %}<span
+                                                class="badge {% if row[c] == 'Available' %}badge-available{% else %}badge-occupied{% endif %}">{{
+                                                row[c] }}</span>
+                                            {% else %}{{ row[c] }}{% endif %}
+                                        </td>{% endfor %}</tr>{% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state"><span class="empty-icon">🛏️</span>No rooms registered.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer-brand">🏥 <span>MediCare HMS</span> — Hospital Management System</div>
+                <div>© 2026 MediCare HMS | Hospital Management System</div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Live clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').textContent = now.toLocaleString('en-IN', {
+                weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+            });
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-IN', {
+                weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+            });
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Toggle form
+        function toggleForm(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        // Table search filter
+        function filterTable(input, tableId) {
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        // Smooth scroll for sidebar
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+
+</html>

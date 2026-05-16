@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments — Hospital Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand"><div class="brand-icon">🏥</div><div><div class="brand-text">MediCare HMS</div><div class="brand-sub">Hospital Admin</div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('dashboard') }}" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <div class="nav-section-label">Management</div>
+            <a href="{{ url_for('patients_page') }}" class="nav-link"><span class="nav-icon">👤</span> Patients</a>
+            <a href="{{ url_for('doctors_page') }}" class="nav-link"><span class="nav-icon">🩺</span> Doctors</a>
+            <a href="{{ url_for('appointments_page') }}" class="nav-link active"><span class="nav-icon">📅</span> Appointments</a>
+            <a href="{{ url_for('billing_page') }}" class="nav-link"><span class="nav-icon">💳</span> Billing</a>
+            <a href="{{ url_for('rooms_page') }}" class="nav-link"><span class="nav-icon">🛏️</span> Rooms</a>
+        </nav>
+        <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div></div>
+    </aside>
+    <div class="main-content">
+        <header class="topbar">
+            <div class="topbar-left"><span class="topbar-title">Appointments</span><span class="topbar-breadcrumb">/ Scheduling</span></div>
+            <div class="topbar-right"><a href="{{ url_for('logout') }}" class="btn-logout">⏻ Sign Out</a></div>
+        </header>
+        <div class="page-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}<div class="flash {{ 'flash-success' if cat == 'success' else 'flash-error' }}">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="page-header fade-in">
+                <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+                <h1>📅 Appointment Scheduling</h1>
+                <p>Book and manage patient-doctor appointments</p>
+            </div>
+
+            <div class="section fade-in">
+                <div class="section-header"><div class="section-title"><span class="icon">📅</span> Book New Appointment</div></div>
+                <div class="section-body">
+                    <form action="/add_appointment" method="POST">
+                        <div class="form-grid">
+                            <div class="form-group"><label>Appointment ID</label><input name="appointment_id" placeholder="e.g. A001" required></div>
+                            <div class="form-group"><label>Patient ID</label><input name="patient_id" placeholder="e.g. P001" required></div>
+                            <div class="form-group"><label>Doctor ID</label><input name="doctor_id" placeholder="e.g. D001" required></div>
+                            <div class="form-group"><label>Appointment Date</label><input name="appointment_date" type="date" required></div>
+                            <div class="form-group"><label>Status</label>
+                                <select name="status" required>
+                                    <option value="">Select status</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions"><button type="submit" class="btn btn-primary">Book Appointment</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="section fade-in">
+                <div class="section-header"><div class="section-title"><span class="icon">📅</span> Appointment Records <span class="section-badge">{{ appointments|length }}</span></div></div>
+                <div class="section-body">
+                    <div class="search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" placeholder="Search appointments..." onkeyup="filterTable(this, 'appointment-table')">
+                    </div>
+                    {% if appointments %}
+                    <div style="overflow-x:auto;">
+                    <table class="data-table striped" id="appointment-table">
+                        <thead><tr>{% for c in appointment_columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+                        <tbody>{% for row in appointments %}<tr>{% for c in appointment_columns %}<td>
+                            {% if c.lower() == 'status' %}<span class="badge {% if row[c] == 'Scheduled' %}badge-available{% elif row[c] == 'Completed' %}badge-occupied{% else %}badge-cancelled{% endif %}">{{ row[c] }}</span>
+                            {% else %}{{ row[c] }}{% endif %}
+                        </td>{% endfor %}</tr>{% endfor %}</tbody>
+                    </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state"><span class="empty-icon">📅</span>No appointments found. Use the form above to book one.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <footer class="footer"><div class="footer-brand">🏥 <span>MediCare HMS</span></div><div>© 2026 Database Assignment</div></footer>
+    </div>
+</div>
+<script>
+function filterTable(input, tableId) {
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+</script>
+</body>
+</html>

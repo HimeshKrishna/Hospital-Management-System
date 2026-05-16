@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms — Hospital Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand"><div class="brand-icon">🏥</div><div><div class="brand-text">MediCare HMS</div><div class="brand-sub">Hospital Admin</div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('dashboard') }}" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <div class="nav-section-label">Management</div>
+            <a href="{{ url_for('patients_page') }}" class="nav-link"><span class="nav-icon">👤</span> Patients</a>
+            <a href="{{ url_for('doctors_page') }}" class="nav-link"><span class="nav-icon">🩺</span> Doctors</a>
+            <a href="{{ url_for('appointments_page') }}" class="nav-link"><span class="nav-icon">📅</span> Appointments</a>
+            <a href="{{ url_for('billing_page') }}" class="nav-link"><span class="nav-icon">💳</span> Billing</a>
+            <a href="{{ url_for('rooms_page') }}" class="nav-link active"><span class="nav-icon">🛏️</span> Rooms</a>
+        </nav>
+        <div class="sidebar-footer"><div class="sidebar-user"><div class="sidebar-avatar">A</div><div class="sidebar-user-info"><div class="sidebar-user-name">Admin</div><div class="sidebar-user-role">Administrator</div></div></div></div>
+    </aside>
+    <div class="main-content">
+        <header class="topbar">
+            <div class="topbar-left"><span class="topbar-title">Rooms</span><span class="topbar-breadcrumb">/ Management</span></div>
+            <div class="topbar-right"><a href="{{ url_for('logout') }}" class="btn-logout">⏻ Sign Out</a></div>
+        </header>
+        <div class="page-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}<div class="flash {{ 'flash-success' if cat == 'success' else 'flash-error' }}">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="page-header fade-in">
+                <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+                <h1>🛏️ Room Management</h1>
+                <p>View room availability and add new rooms</p>
+            </div>
+
+            <div class="section fade-in">
+                <div class="section-header"><div class="section-title"><span class="icon">➕</span> Add New Room</div></div>
+                <div class="section-body">
+                    <form action="/add_room" method="POST">
+                        <div class="form-grid">
+                            <div class="form-group"><label>Room Number</label><input name="room_no" type="number" placeholder="e.g. 101" required></div>
+                            <div class="form-group"><label>Room Type</label>
+                                <select name="room_type" required><option value="">Select type</option><option value="General">General</option><option value="ICU">ICU</option><option value="Private">Private</option><option value="Semi-Private">Semi-Private</option></select>
+                            </div>
+                            <div class="form-group"><label>Availability</label>
+                                <select name="availability" required><option value="">Select</option><option value="Available">Available</option><option value="Occupied">Occupied</option></select>
+                            </div>
+                        </div>
+                        <div class="form-actions"><button type="submit" class="btn btn-primary">Add Room</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="section fade-in">
+                <div class="section-header"><div class="section-title"><span class="icon">📋</span> Room Directory <span class="section-badge">{{ rooms|length if rooms else 0 }}</span></div></div>
+                <div class="section-body">
+                    <div class="search-bar"><span class="search-icon">🔍</span><input type="text" placeholder="Search rooms..." onkeyup="filterTable(this,'rt')"></div>
+                    {% if rooms %}
+                    <div style="overflow-x:auto;">
+                    <table class="data-table striped" id="rt">
+                        <thead><tr>{% for c in room_columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+                        <tbody>
+                        {% for row in rooms %}<tr>{% for c in room_columns %}<td>
+                            {% if c.lower() == 'availability' %}<span class="badge {% if row[c] == 'Available' %}badge-available{% else %}badge-occupied{% endif %}">{{ row[c] }}</span>
+                            {% else %}{{ row[c] }}{% endif %}
+                        </td>{% endfor %}</tr>{% endfor %}
+                        </tbody>
+                    </table></div>
+                    {% else %}<div class="empty-state"><span class="empty-icon">🛏️</span>No rooms registered yet.</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <footer class="footer"><div class="footer-brand">🏥 <span>MediCare HMS</span></div><div>© 2026 Database Assignment</div></footer>
+    </div>
+</div>
+<script>
+function filterTable(input, id) {
+    const f = input.value.toLowerCase();
+    document.querySelectorAll('#'+id+' tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(f) ? '' : 'none');
+}
+</script>
+</body>
+</html>
